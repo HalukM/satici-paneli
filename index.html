@@ -249,7 +249,7 @@
     <script>
         // --- CONFIGURATION ---
         // Gerçek bir uygulamada bu adres, backend sunucunuzun adresi olacaktır.
-        const API_BASE_URL = 'http://localhost:3000'; 
+        const API_BASE_URL = 'https://satici-paneli.onrender.com'; 
         
         // --- DİL VE ÇEVİRİ YÖNETİMİ ---
 
@@ -849,7 +849,7 @@
         }
 
         function loadPage(isJustRefreshing = false) {
-            const hash = window.location.hash.substring(1) || 'dashboard';
+            const hash = window.location.hash.substring(1).split('?')[0] || 'dashboard';
             if (pages[hash]) {
                 pageContent.innerHTML = pages[hash];
                 if (!isJustRefreshing) {
@@ -1555,7 +1555,7 @@
             }
 
             // Yükleme simülasyonu
-            uploadBtn.addEventListener('click', () => {
+            uploadBtn.addEventListener('click', async () => {
                  const platform = storeSelector.value;
                  if(!platform) {
                      alert("Lütfen bir mağaza seçin.");
@@ -1563,42 +1563,53 @@
                  }
                  
                 const productData = {
+                    shop: 'sizin-magaza-adiniz.myshopify.com', // Gerçek bir uygulamada bu bilgi bağlantı sırasında saklanmalıdır.
                     title: titleInput.value,
-                    description: descInput.value,
+                    body_html: descInput.value,
                     tags: tagsInput.value,
                     price: document.getElementById('listing-price').value,
-                    stock: document.getElementById('listing-stock').value,
-                    // In a real app, you'd handle image uploads properly
-                    images: uploadedFiles.map(f => f.name) 
+                    inventory_quantity: document.getElementById('listing-stock').value,
+                    // Gerçek bir uygulamada görseller base64 olarak veya bir URL üzerinden gönderilir.
+                    // Bu prototipte görsel yükleme kısmı API'ye dahil edilmemiştir.
                 };
-
-                // Gerçek API çağrısı buraya gelecek
-                // fetch(`${API_BASE_URL}/${platform}/products`, {
-                //     method: 'POST',
-                //     headers: { 'Content-Type': 'application/json', /* Authorization headers */ },
-                //     body: JSON.stringify(productData)
-                // })
-                // .then(...)
-                
-                console.log(`Uploading to ${platform}:`, productData);
-
 
                 const originalText = uploadBtn.innerHTML;
                 uploadBtn.disabled = true;
                 uploadBtn.innerHTML = `<div class="spinner !w-5 !h-5 !border-2"></div> <span data-translate-key="listing_manager_uploading">${translations[currentLang].listing_manager_uploading}</span>`;
 
-                setTimeout(() => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/${platform}/products`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(productData)
+                    });
+
+                    if (!response.ok) {
+                        const errorResult = await response.json();
+                        throw new Error(errorResult.message || 'Yükleme başarısız oldu');
+                    }
+
+                    const result = await response.json();
+                    console.log('Yükleme başarılı:', result);
+
                     uploadBtn.classList.remove('btn-primary');
                     uploadBtn.classList.add('bg-green-600');
                     uploadBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span data-translate-key="listing_manager_uploaded">${translations[currentLang].listing_manager_uploaded}</span>`;
 
-                    setTimeout(() => {
+                } catch (error) {
+                    console.error('Yükleme hatası:', error);
+                    alert(`Hata: ${error.message}`);
+                    uploadBtn.classList.remove('btn-primary');
+                    uploadBtn.classList.add('bg-red-600');
+                    uploadBtn.innerHTML = `Hata Oluştu`;
+                } finally {
+                     setTimeout(() => {
                         uploadBtn.disabled = false;
-                        uploadBtn.classList.remove('bg-green-600');
+                        uploadBtn.classList.remove('bg-green-600', 'bg-red-600');
                         uploadBtn.classList.add('btn-primary');
                         uploadBtn.innerHTML = originalText;
-                    }, 2500);
-                }, 2000);
+                    }, 3000);
+                }
             });
         }
 
