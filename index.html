@@ -248,7 +248,6 @@
 
     <script>
         // --- CONFIGURATION ---
-        // Gerçek bir uygulamada bu adres, backend sunucunuzun adresi olacaktır.
         const API_BASE_URL = 'https://satici-paneli.onrender.com'; 
         
         // --- DİL VE ÇEVİRİ YÖNETİMİ ---
@@ -944,7 +943,26 @@
 
              setLanguage(currentLang);
              loadPage();
+             checkForAuthRedirect();
         });
+        
+        function checkForAuthRedirect() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('connected') === 'shopify') {
+                let connections = getConnections();
+                connections.shopify = true;
+                localStorage.setItem('connectedStores', JSON.stringify(connections));
+                
+                // Clean the URL
+                const newUrl = window.location.pathname + window.location.hash;
+                history.replaceState(null, '', newUrl);
+
+                // Update UI
+                if(window.location.hash.includes('platform-connections')) {
+                    updateConnectionButtonStates();
+                }
+            }
+        }
 
         // --- MOBİL MENÜ KONTROLÜ ---
         const sidebar = document.getElementById('sidebar');
