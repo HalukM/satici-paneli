@@ -47,9 +47,6 @@ app.get('/shopify/callback', async (req, res) => {
     const { shop, hmac, code } = req.query;
 
     if (shop && hmac && code) {
-        // HMAC doğrulamasını burada yapmanız gerekir (güvenlik için)
-        // Bu örnekte basitlik için atlanmıştır.
-
         const accessTokenRequestUrl = `https://${shop}/admin/oauth/access_token`;
         const accessTokenPayload = {
             client_id: SHOPIFY_API_KEY,
@@ -65,22 +62,29 @@ app.get('/shopify/callback', async (req, res) => {
             });
 
             const responseJson = await response.json();
+            
+            // Shopify'dan gelen hatayı kontrol et
+            if (responseJson.error) {
+                console.error('Shopify API Hatası:', responseJson.error_description);
+                return res.status(400).send(`Shopify Hatası: ${responseJson.error_description || responseJson.error}`);
+            }
+
             const accessToken = responseJson.access_token;
+
+            if (!accessToken) {
+                console.error('Erişim anahtarı alınamadı. Shopify yanıtı:', responseJson);
+                throw new Error('Erişim anahtarı alınamadı.');
+            }
             
             console.log(`Erişim Anahtarı alındı: ${accessToken}`);
-            
-            // Anahtarı (token) kullanıcıyla ilişkilendirerek saklayın
-            // Bu örnekte basit bir obje kullanıyoruz, gerçekte veritabanı olmalı.
             userTokens[shop] = accessToken;
 
             // Kullanıcıyı ön yüze (frontend) geri yönlendir
-            // ÖNEMLİ: Buradaki adresi, frontend'i YAYINLADIĞINIZ adrese göre güncelleyin.
-            // Örneğin Netlify'da yayınladıysanız: https://senin-site-adin.netlify.app/
-            res.redirect(`https://sweet-pothos-58bd7f.netlify.app//#platform-connections?connected=shopify`);
+            res.redirect(`https://sweet-pothos-58bd7f.netlify.app/#platform-connections?connected=shopify`);
 
         } catch (error) {
-            console.error('Erişim anahtarı alınırken hata:', error);
-            res.status(500).send('Bir hata oluştu.');
+            console.error('Erişim anahtarı alınırken kritik hata:', error);
+            res.status(500).send('Sunucuda bir hata oluştu. Lütfen Render loglarını kontrol edin.');
         }
 
     } else {
@@ -143,4 +147,3 @@ app.post('/shopify/products', async (req, res) => {
 app.listen(port, () => {
     console.log(`Sunucu http://localhost:${port} adresinde çalışıyor`);
 });
-
