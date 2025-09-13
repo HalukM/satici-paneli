@@ -947,7 +947,6 @@
         });
         
         function checkForAuthRedirect() {
-            const params = new URLSearchParams(window.location.search);
             const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
             
             if (hashParams.get('connected') === 'shopify') {
@@ -959,13 +958,11 @@
                 }
                 
                 // Clean the URL
-                const newUrl = window.location.pathname + window.location.hash.split('?')[0];
+                const newUrl = window.location.pathname + "#platform-connections";
                 history.replaceState(null, '', newUrl);
 
                 // Update UI
-                if(window.location.hash.includes('platform-connections')) {
-                    updateConnectionButtonStates();
-                }
+                loadPage(true); // Sayfayı yeniden yükleyerek buton durumunu güncelleyin
             }
         }
 
@@ -1059,7 +1056,13 @@
         }
         
         function getConnections() {
-            return JSON.parse(localStorage.getItem('connectedStores')) || {etsy: false, shopify: false};
+            try {
+                const connections = JSON.parse(localStorage.getItem('connectedStores'));
+                return connections || { shopify: false };
+            } catch (e) {
+                console.error("Could not parse connected stores from localStorage", e);
+                return { shopify: false };
+            }
         }
 
         function updateConnectionButtonStates() {
