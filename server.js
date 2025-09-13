@@ -76,7 +76,7 @@ app.get('/shopify/callback', async (req, res) => {
             // Kullanıcıyı ön yüze (frontend) geri yönlendir
             // ÖNEMLİ: Buradaki adresi, frontend'i YAYINLADIĞINIZ adrese göre güncelleyin.
             // Örneğin Netlify'da yayınladıysanız: https://senin-site-adin.netlify.app/
-            res.redirect(`[SENIN-NETLIFY-ADRESIN]/#platform-connections?connected=shopify`);
+            res.redirect(`https://sweet-pothos-58bd7f.netlify.app//#platform-connections?connected=shopify`);
 
         } catch (error) {
             console.error('Erişim anahtarı alınırken hata:', error);
