@@ -1,16 +1,21 @@
 // Bu dosya, uygulamanın arka yüzünü (backend) temsil eder.
 // Gerçek bir projede bu sunucuyu ayrı bir klasörde çalıştırırsınız.
-// Bu kodun çalışması için Node.js ve bazı paketlerin (express, dotenv, node-fetch) kurulu olması gerekir.
+// Bu kodun çalışması için Node.js ve bazı paketlerin (express, dotenv, node-fetch, cors) kurulu olması gerekir.
 
 const express = require('express');
 const fetch = require('node-fetch');
 const dotenv = require('dotenv');
+const cors = require('cors'); // CORS middleware'ini ekliyoruz
 
 // .env dosyasındaki gizli anahtarları yükler
 dotenv.config();
 
 const app = express();
 const port = 3000;
+
+// Frontend'den gelen istekleri kabul etmek için CORS'u etkinleştirin
+app.use(cors()); 
+app.use(express.json()); // Gelen JSON verilerini okumak için
 
 const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY;
 const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET;
@@ -28,7 +33,8 @@ app.get('/', (req, res) => {
 app.get('/shopify/auth', (req, res) => {
     const shop = req.query.shop;
     if (shop) {
-        const redirectUri = `http://localhost:${port}/shopify/callback`;
+        // Render'a yüklendiğinde bu adresin de canlı olması gerekir.
+        const redirectUri = `https://satici-paneli.onrender.com/shopify/callback`; 
         const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SHOPIFY_SCOPES}&redirect_uri=${redirectUri}`;
         res.redirect(installUrl);
     } else {
@@ -68,8 +74,9 @@ app.get('/shopify/callback', async (req, res) => {
             userTokens[shop] = accessToken;
 
             // Kullanıcıyı ön yüze (frontend) geri yönlendir
-            // Bağlantının başarılı olduğunu belirtmek için bir parametre ekleyebilirsiniz.
-            res.redirect(`http://127.0.0.1:5500/e-ticaret-yonetim-paneli.html#platform-connections?connected=shopify`);
+            // ÖNEMLİ: Buradaki adresi, frontend'i YAYINLADIĞINIZ adrese göre güncelleyin.
+            // Örneğin Netlify'da yayınladıysanız: https://senin-site-adin.netlify.app/
+            res.redirect(`[SENIN-NETLIFY-ADRESIN]/#platform-connections?connected=shopify`);
 
         } catch (error) {
             console.error('Erişim anahtarı alınırken hata:', error);
@@ -84,23 +91,56 @@ app.get('/shopify/callback', async (req, res) => {
 
 // 3. Adım: Ön yüzden gelen ürün yükleme isteğini işleme
 app.post('/shopify/products', async (req, res) => {
-    // Bu kısım, ön yüzden ürün verisini alıp Shopify'a gönderecek
-    // olan API endpoint'idir. Gerçek bir uygulamada bu bölümü
-    // doldurmanız gerekir.
-    
-    // const { shop, title, description, price } = req.body;
-    // const accessToken = userTokens[shop];
+    const { shop, title, body_html, price, inventory_quantity, tags } = req.body;
+    const accessToken = userTokens[shop];
 
-    // if (!accessToken) {
-    //     return res.status(403).send('Yetkisiz erişim');
-    // }
-
-    // // Shopify'a ürünü oluşturmak için API çağrısı yap...
+    if (!accessToken) {
+        return res.status(403).json({ message: 'Mağaza için yetkilendirme bulunamadı. Lütfen tekrar bağlanın.' });
+    }
     
-    res.json({ status: 'success', message: 'Ürün başarıyla Shopify\'a yüklendi (simülasyon)' });
+    const productData = {
+        product: {
+            title: title,
+            body_html: body_html,
+            vendor: "Satıcı Paneli Uygulaması",
+            product_type: "Özel Ürün",
+            tags: tags,
+            variants: [
+                {
+                    price: price,
+                    inventory_quantity: inventory_quantity
+                }
+            ],
+            status: "draft" // Ürünü taslak olarak oluştur
+        }
+    };
+
+    try {
+        const response = await fetch(`https://${shop}/admin/api/2023-10/products.json`, {
+            method: 'POST',
+            headers: {
+                'X-Shopify-Access-Token': accessToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(productData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Shopify API Hatası:', errorData);
+            throw new Error('Shopify ürünü oluşturamadı.');
+        }
+
+        const responseData = await response.json();
+        res.json({ status: 'success', data: responseData });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
 
 app.listen(port, () => {
     console.log(`Sunucu http://localhost:${port} adresinde çalışıyor`);
 });
+
