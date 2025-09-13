@@ -948,13 +948,18 @@
         
         function checkForAuthRedirect() {
             const params = new URLSearchParams(window.location.search);
-            if (params.get('connected') === 'shopify') {
-                let connections = getConnections();
-                connections.shopify = true;
-                localStorage.setItem('connectedStores', JSON.stringify(connections));
+            const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
+            
+            if (hashParams.get('connected') === 'shopify') {
+                const shop = hashParams.get('shop');
+                if (shop) {
+                    let connections = getConnections();
+                    connections.shopify = shop; // Store the shop name
+                    localStorage.setItem('connectedStores', JSON.stringify(connections));
+                }
                 
                 // Clean the URL
-                const newUrl = window.location.pathname + window.location.hash;
+                const newUrl = window.location.pathname + window.location.hash.split('?')[0];
                 history.replaceState(null, '', newUrl);
 
                 // Update UI
@@ -1559,36 +1564,30 @@
 
             const connections = getConnections();
             storeSelector.innerHTML = '';
-            if (connections.etsy) {
-                const option = document.createElement('option');
-                option.value = 'etsy';
-                option.textContent = 'Etsy Mağazam';
-                storeSelector.appendChild(option);
-            }
+            
             if (connections.shopify) {
                  const option = document.createElement('option');
-                option.value = 'shopify';
-                option.textContent = 'Shopify Mağazam';
+                option.value = `shopify:${connections.shopify}`;
+                option.textContent = `Shopify: ${connections.shopify.replace('.myshopify.com', '')}`;
                 storeSelector.appendChild(option);
             }
 
             // Yükleme simülasyonu
             uploadBtn.addEventListener('click', async () => {
-                 const platform = storeSelector.value;
-                 if(!platform) {
+                 const platformAndShop = storeSelector.value;
+                 if(!platformAndShop) {
                      alert("Lütfen bir mağaza seçin.");
                      return;
                  }
+                 const [platform, shop] = platformAndShop.split(':');
                  
                 const productData = {
-                    shop: 'sizin-magaza-adiniz.myshopify.com', // Gerçek bir uygulamada bu bilgi bağlantı sırasında saklanmalıdır.
+                    shop: shop,
                     title: titleInput.value,
                     body_html: descInput.value,
                     tags: tagsInput.value,
                     price: document.getElementById('listing-price').value,
                     inventory_quantity: document.getElementById('listing-stock').value,
-                    // Gerçek bir uygulamada görseller base64 olarak veya bir URL üzerinden gönderilir.
-                    // Bu prototipte görsel yükleme kısmı API'ye dahil edilmemiştir.
                 };
 
                 const originalText = uploadBtn.innerHTML;
