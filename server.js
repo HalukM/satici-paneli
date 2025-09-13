@@ -14,7 +14,7 @@ const app = express();
 const port = 3000;
 
 // Frontend'den gelen istekleri kabul etmek için CORS'u etkinleştirin
-app.use(cors()); 
+app.use(cors());
 app.use(express.json()); // Gelen JSON verilerini okumak için
 
 const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY;
@@ -23,7 +23,7 @@ const SHOPIFY_SCOPES = 'write_products,read_products'; // İzinler
 
 // Bu, kullanıcı token'larını saklamak için geçici bir bellektir.
 // Gerçek bir uygulamada bu bilgileri bir veritabanında saklamalısınız.
-const userTokens = {}; 
+const userTokens = {};
 
 app.get('/', (req, res) => {
     res.send('Satıcı Paneli Backend Sunucusu Çalışıyor!');
@@ -34,7 +34,7 @@ app.get('/shopify/auth', (req, res) => {
     const shop = req.query.shop;
     if (shop) {
         // Render'a yüklendiğinde bu adresin de canlı olması gerekir.
-        const redirectUri = `https://satici-paneli.onrender.com/shopify/callback`; 
+        const redirectUri = `https://satici-paneli.onrender.com/shopify/callback`;
         const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SHOPIFY_SCOPES}&redirect_uri=${redirectUri}`;
         res.redirect(installUrl);
     } else {
@@ -79,8 +79,8 @@ app.get('/shopify/callback', async (req, res) => {
             console.log(`Erişim Anahtarı alındı: ${accessToken}`);
             userTokens[shop] = accessToken;
 
-            // Kullanıcıyı ön yüze (frontend) geri yönlendir
-            res.redirect(`https://sweet-pothos-58bd7f.netlify.app/#platform-connections?connected=shopify`);
+            // Kullanıcıyı ön yüze (frontend) geri yönlendir, mağaza adını da ekleyerek
+            res.redirect(`https://sweet-pothos-58bd7f.netlify.app/#platform-connections?connected=shopify&shop=${shop}`);
 
         } catch (error) {
             console.error('Erişim anahtarı alınırken kritik hata:', error);
@@ -147,3 +147,4 @@ app.post('/shopify/products', async (req, res) => {
 app.listen(port, () => {
     console.log(`Sunucu http://localhost:${port} adresinde çalışıyor`);
 });
+
