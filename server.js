@@ -81,7 +81,6 @@ app.get('/shopify/callback', async (req, res) => {
 
             // Kullanıcıyı ön yüze (frontend) geri yönlendir, mağaza adını da ekleyerek
             res.redirect(`https://sweet-pothos-58bd7f.netlify.app/#platform-connections?connected=shopify&shop=${shop}`);
-
         } catch (error) {
             console.error('Erişim anahtarı alınırken kritik hata:', error);
             res.status(500).send('Sunucuda bir hata oluştu. Lütfen Render loglarını kontrol edin.');
@@ -147,4 +146,5 @@ app.post('/shopify/products', async (req, res) => {
 app.listen(port, () => {
     console.log(`Sunucu http://localhost:${port} adresinde çalışıyor`);
 });
+
 
