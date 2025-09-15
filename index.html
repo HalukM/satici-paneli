@@ -960,7 +960,6 @@
                 // Clean the URL and navigate to the connections page
                 const newUrl = window.location.pathname + "#platform-connections";
                 history.replaceState(null, '', newUrl);
-                
                 // The loadPage function will be called by DOMContentLoaded, 
                 // which will handle rendering the updated state.
             }
@@ -1568,14 +1567,14 @@
             const connections = getConnections();
             storeSelector.innerHTML = '';
             
-            if (connections && connections.shopify) {
-                 const option = document.createElement('option');
-                option.value = `shopify:${connections.shopify}`;
-                option.textContent = `Shopify: ${connections.shopify.replace('.myshopify.com', '')}`;
-                storeSelector.appendChild(option);
-            }
+            // Sabit olarak mağazayı ekle
+            const option = document.createElement('option');
+            option.value = `shopify:benim-test.myshopify.com`;
+            option.textContent = `Shopify: benim-test`;
+            storeSelector.appendChild(option);
 
-            // Yükleme simülasyonu
+
+            // Yükleme
             uploadBtn.addEventListener('click', async () => {
                  const platformAndShop = storeSelector.value;
                  if(!platformAndShop) {
