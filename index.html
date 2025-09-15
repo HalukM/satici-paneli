@@ -947,19 +947,22 @@
         });
         
         function checkForAuthRedirect() {
-            const hash = window.location.hash;
-            if (hash.includes('connected=shopify') && hash.includes('shop=')) {
-                const params = new URLSearchParams(hash.split('?')[1]);
+            const params = new URLSearchParams(window.location.hash.split('?')[1]);
+            
+            if (params.get('connected') === 'shopify') {
                 const shop = params.get('shop');
-                
                 if (shop) {
                     let connections = getConnections();
-                    connections.shopify = shop;
+                    connections.shopify = shop; // Store the shop name
                     localStorage.setItem('connectedStores', JSON.stringify(connections));
                 }
                 
-                // URL'yi temizle ve doğru sayfaya git
-                window.location.hash = '#platform-connections';
+                // Clean the URL and navigate to the connections page
+                const newUrl = window.location.pathname + "#platform-connections";
+                history.replaceState(null, '', newUrl);
+                
+                // The loadPage function will be called by DOMContentLoaded, 
+                // which will handle rendering the updated state.
             }
         }
 
