@@ -166,6 +166,12 @@
                             <i class="fas fa-key"></i>
                             <span data-translate-key="settings_enter_api_key">API Anahtarını Gir</span>
                         </button>
+                         <hr class="border-gray-600 my-2">
+                        <h4 class="text-xs font-bold text-gray-400 px-2 pb-2" data-translate-key="settings_render_url">Sunucu Ayarları</h4>
+                        <button id="enter-render-url-btn" class="text-left text-sm w-full hover:bg-gray-700 p-2 rounded flex items-center gap-2">
+                            <i class="fas fa-server"></i>
+                            <span data-translate-key="settings_enter_render_url">Sunucu Adresini Gir</span>
+                        </button>
                     </div>
                     <button id="settings-btn" class="w-full text-gray-400 hover:text-white flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700">
                         <i class="fas fa-cog text-lg"></i>
@@ -220,6 +226,29 @@
         </div>
     </div>
     
+    <!-- Render URL Modal -->
+    <div id="render-url-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-8 max-w-md w-full">
+            <i class="fas fa-server text-4xl text-sky-400 mb-4 mx-auto"></i>
+            <h2 class="text-2xl font-bold text-white mb-2" data-translate-key="render_url_modal_title">Render Sunucu Adresini Girin</h2>
+            <p class="text-gray-400 mb-6" data-translate-key="render_url_modal_subtitle">Uygulamanın arka yüz servisleriyle iletişim kurması için sunucu adresiniz gereklidir.</p>
+            <input type="text" id="render-url-input" class="form-input" placeholder="https://projeniz.onrender.com">
+            <div class="flex flex-col sm:flex-row gap-4 mt-4">
+                <button id="cancel-render-url-btn" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg w-full transition-colors" data-translate-key="button_cancel">İptal</button>
+                <button id="save-render-url-btn" class="btn-primary w-full" data-translate-key="button_save">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="error-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-8 max-w-sm w-full text-center">
+            <i class="fas fa-times-circle text-4xl text-red-500 mb-4"></i>
+            <h2 class="text-xl font-bold text-white mb-2" data-translate-key="error_modal_title">Bir Hata Oluştu</h2>
+            <p id="error-modal-message" class="text-gray-400 mb-6">Beklenmedik bir sorun oluştu.</p>
+            <button id="close-error-modal-btn" class="btn-primary w-full" data-translate-key="button_close">Kapat</button>
+        </div>
+    </div>
+
     <div id="shopify-url-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
         <div class="card p-8 max-w-md w-full">
             <i class="fab fa-shopify text-5xl text-green-500 mb-4 mx-auto"></i>
@@ -248,7 +277,6 @@
 
     <script>
         // --- CONFIGURATION ---
-        const API_BASE_URL = 'https://satici-paneli.onrender.com'; 
         
         // --- DİL VE ÇEVİRİ YÖNETİMİ ---
 
@@ -305,6 +333,7 @@
                 listing_manager_upload_button: "Yükle",
                 listing_manager_uploading: "Yükleniyor...",
                 listing_manager_uploaded: "Başarıyla Yüklendi!",
+                listing_manager_upload_error: "Yükleme Başarısız",
                 ai_title: "Yapay Zeka Destekli İçerik Üretici",
                 ai_subtitle: "Ürününüzle ilgili anahtar kelimeleri girin, sizin için başlık, açıklama ve etiketleri oluşturalım.",
                 ai_keywords_label: "Anahtar Kelimeler",
@@ -364,6 +393,12 @@
                 delete_modal_subtitle: "Bu içerik kalıcı olarak silinecektir. Bu işlem geri alınamaz.",
                 button_cancel: "İptal",
                 button_confirm_delete: "Evet, Sil",
+                error_modal_title: "Bir Hata Oluştu",
+                button_close: "Kapat",
+                settings_render_url: "Sunucu Ayarları",
+                settings_enter_render_url: "Sunucu Adresini Gir",
+                render_url_modal_title: "Render Sunucu Adresini Girin",
+                render_url_modal_subtitle: "Uygulamanın arka yüz servisleriyle iletişim kurması için sunucu adresiniz gereklidir.",
                 lang_name: "Türkçe",
                 ai_prompt: `Bir e-ticaret metin yazarı olarak davran. Aşağıdaki anahtar kelimeleri kullanarak SEO uyumlu, satış odaklı ve yaratıcı ürün içerikleri oluştur. Anahtar Kelimeler: "{keywords}"\n\nÇıktıyı mutlaka şu formatta ver:\nBaşlık: [Oluşturulan Başlık]\nAçıklama: [Oluşturulan Açıklama]\nEtiketler: [Oluşturulan Etiketler]`,
                 ai_translate_prompt: `Aşağıdaki e-ticaret içeriğini profesyonel ve akıcı bir şekilde İngilizce'ye çevir. Pazarlama dilini koru. Çıktıyı mutlaka şu formatta ver:\nBaşlık: [Çevrilmiş Başlık]\nAçıklama: [Çevrilmiş Açıklama]\nEtiketler: [Çevrilmiş Etiketler]\n\n---İÇERİK---\nBaşlık: {title}\nAçıklama: {description}\nEtiketler: {tags}`,
@@ -981,6 +1016,7 @@
         // --- MODAL FONKSİYONLARI ---
         const deleteModal = document.getElementById('delete-confirm-modal');
         const apiKeyModal = document.getElementById('api-key-modal');
+        const errorModal = document.getElementById('error-modal');
         let itemToDeleteId = null;
         let itemTypeToDelete = null;
 
@@ -1000,6 +1036,14 @@
         }
         function hideApiKeyModal() { apiKeyModal.classList.add('hidden'); }
         
+        function showErrorModal(message) {
+            document.getElementById('error-modal-message').textContent = message;
+            errorModal.classList.remove('hidden');
+        }
+        function hideErrorModal() {
+            errorModal.classList.add('hidden');
+        }
+
         const shopifyUrlModal = document.getElementById('shopify-url-modal');
         function showShopifyUrlModal() { shopifyUrlModal.classList.remove('hidden'); }
         function hideShopifyUrlModal() { shopifyUrlModal.classList.add('hidden'); }
@@ -1007,8 +1051,12 @@
         document.getElementById('continue-shopify-btn')?.addEventListener('click', () => {
             const urlInput = document.getElementById('shopify-url-input');
             const shopName = urlInput.value.trim().replace('.myshopify.com', '');
+            const apiUrl = getApiBaseUrl();
+            if (!apiUrl) {
+                return showErrorModal("Lütfen Ayarlar menüsünden Render sunucu adresini girin.");
+            }
             if (shopName) {
-                window.location.href = `${API_BASE_URL}/shopify/auth?shop=${shopName}.myshopify.com`;
+                window.location.href = `${apiUrl}/shopify/auth?shop=${shopName}.myshopify.com`;
             }
         });
 
@@ -1024,17 +1072,22 @@
         document.getElementById('cancel-delete-btn')?.addEventListener('click', hideDeleteConfirmModal);
         document.getElementById('save-api-key-btn')?.addEventListener('click', saveApiKey);
         document.getElementById('cancel-api-key-btn')?.addEventListener('click', hideApiKeyModal);
+        document.getElementById('close-error-modal-btn')?.addEventListener('click', hideErrorModal);
 
         // --- AYARLAR MENÜSÜ KONTROLÜ ---
         document.body.addEventListener('click', function(event) {
             const settingsBtn = document.getElementById('settings-btn');
             const settingsDropdown = document.getElementById('settings-dropdown');
             const enterApiKeyBtn = document.getElementById('enter-api-key-btn');
+            const enterRenderUrlBtn = document.getElementById('enter-render-url-btn');
 
             if (settingsBtn && settingsBtn.contains(event.target)) {
                 settingsDropdown.classList.toggle('hidden');
             } else if(enterApiKeyBtn && enterApiKeyBtn.contains(event.target)) {
                 showApiKeyModal();
+                settingsDropdown.classList.add('hidden');
+            } else if(enterRenderUrlBtn && enterRenderUrlBtn.contains(event.target)) {
+                showRenderUrlModal();
                 settingsDropdown.classList.add('hidden');
             } else if (settingsDropdown && !settingsDropdown.classList.contains('hidden') && !settingsDropdown.contains(event.target) && !settingsBtn.contains(event.target)) {
                 settingsDropdown.classList.add('hidden');
@@ -1052,6 +1105,29 @@
             if ((window.location.hash.substring(1) || 'dashboard') === 'ai-generator') {
                 updateAiButtonStates();
             }
+        }
+
+        const renderUrlModal = document.getElementById('render-url-modal');
+        function showRenderUrlModal() {
+            document.getElementById('render-url-input').value = getApiBaseUrl();
+            renderUrlModal.classList.remove('hidden');
+        }
+        function hideRenderUrlModal() { renderUrlModal.classList.add('hidden'); }
+        document.getElementById('save-render-url-btn')?.addEventListener('click', saveApiBaseUrl);
+        document.getElementById('cancel-render-url-btn')?.addEventListener('click', hideRenderUrlModal);
+
+        function getApiBaseUrl() {
+            return localStorage.getItem('renderApiUrl') || '';
+        }
+
+        function saveApiBaseUrl() {
+            const urlInput = document.getElementById('render-url-input');
+            let url = urlInput.value.trim();
+            if (url.endsWith('/')) {
+                url = url.slice(0, -1);
+            }
+            localStorage.setItem('renderApiUrl', url);
+            hideRenderUrlModal();
         }
         
         function getConnections() {
@@ -1594,16 +1670,27 @@
                 uploadBtn.disabled = true;
                 uploadBtn.innerHTML = `<div class="spinner !w-5 !h-5 !border-2"></div> <span data-translate-key="listing_manager_uploading">${translations[currentLang].listing_manager_uploading}</span>`;
 
+                const apiUrl = getApiBaseUrl();
+                if (!apiUrl) {
+                    showErrorModal("Lütfen Ayarlar menüsünden Render sunucu adresini girin.");
+                    uploadBtn.disabled = false;
+                    uploadBtn.innerHTML = originalText;
+                    return;
+                }
+
                 try {
-                    const response = await fetch(`${API_BASE_URL}/${platform}/products`, {
+                    // GERÇEK API ÇAĞRISI
+                    const response = await fetch(`${apiUrl}/shopify/products`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(productData)
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(productData),
                     });
 
                     if (!response.ok) {
-                        const errorResult = await response.json();
-                        throw new Error(errorResult.message || 'Yükleme başarısız oldu');
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || `Sunucu hatası: ${response.status}`);
                     }
 
                     const result = await response.json();
@@ -1615,10 +1702,10 @@
 
                 } catch (error) {
                     console.error('Yükleme hatası:', error);
-                    alert(`Hata: ${error.message}`);
+                    showErrorModal(error.message); // Hata modalını göster
                     uploadBtn.classList.remove('btn-primary');
                     uploadBtn.classList.add('bg-red-600');
-                    uploadBtn.innerHTML = `Hata Oluştu`;
+                    uploadBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span data-translate-key="listing_manager_upload_error">${translations[currentLang].listing_manager_upload_error}</span>`;
                 } finally {
                      setTimeout(() => {
                         uploadBtn.disabled = false;
@@ -1651,6 +1738,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
