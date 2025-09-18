@@ -26,7 +26,7 @@ const SHOPIFY_SCOPES = 'write_products,read_products'; // İzinler
 const userTokens = {}; 
 
 app.get('/', (req, res) => {
-    res.send('Satıcı Paneli Backend Sunucusu Çalışıyor!');
+    res.send('satici-paneli Backend Sunucusu Çalışıyor!');
 });
 
 // 1. Adım: Kullanıcıyı Shopify Onay Ekranına Yönlendirme
@@ -146,5 +146,6 @@ app.post('/shopify/products', async (req, res) => {
 app.listen(port, () => {
     console.log(`Sunucu http://localhost:${port} adresinde çalışıyor`);
 });
+
 
 
