@@ -279,7 +279,6 @@
         // --- CONFIGURATION ---
         
         // --- DİL VE ÇEVİRİ YÖNETİMİ ---
-
         const translations = {
             tr: {
                 panel_title: "Satıcı Paneli",
@@ -1055,9 +1054,7 @@
                 return showErrorModal("Lütfen Ayarlar menüsünden Render sunucu adresini girin.");
             }
             if (shopName) {
-                // Redirect back to this exact page after auth
-                const frontendUrl = window.location.origin + window.location.pathname;
-                window.location.href = `${apiUrl}/shopify/auth?shop=${shopName}.myshopify.com&redirect_uri=${encodeURIComponent(frontendUrl)}`;
+                window.location.href = `${apiUrl}/shopify/auth?shop=${shopName}.myshopify.com`;
             }
         });
 
@@ -1580,6 +1577,15 @@
             const storeSelector = document.getElementById('store-selector');
 
             let uploadedFiles = [];
+            
+             // Helper to convert a file to a Base64 string
+            const toBase64 = file => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]); // Sadece base64 verisini al
+                reader.onerror = error => reject(error);
+            });
+
 
             const renderPreviews = () => {
                 previewsContainer.innerHTML = '';
@@ -1670,6 +1676,15 @@
                  if (!accessToken) {
                     return showErrorModal("Mağaza için yetkilendirme bulunamadı. Lütfen tekrar bağlanın.");
                  }
+                 
+                const originalHTML = uploadBtn.innerHTML;
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = `<div class="spinner !w-5 !h-5 !border-2"></div> <span data-translate-key="listing_manager_uploading">${translations[currentLang].listing_manager_uploading}</span>`;
+
+                // Fotoğrafları Base64'e çevir
+                const imagePromises = uploadedFiles.map(file => toBase64(file));
+                const base64Images = await Promise.all(imagePromises);
+
 
                 const productData = {
                     shop: shop,
@@ -1679,11 +1694,8 @@
                     tags: tagsInput.value,
                     price: document.getElementById('listing-price').value,
                     inventory_quantity: document.getElementById('listing-stock').value,
+                    images: base64Images // YENİ: Base64 imaj dizisini ekle
                 };
-
-                const originalHTML = uploadBtn.innerHTML;
-                uploadBtn.disabled = true;
-                uploadBtn.innerHTML = `<div class="spinner !w-5 !h-5 !border-2"></div> <span data-translate-key="listing_manager_uploading">${translations[currentLang].listing_manager_uploading}</span>`;
 
                 const apiUrl = getApiBaseUrl();
                 if (!apiUrl) {
