@@ -48,6 +48,17 @@
         .btn-primary:hover {
             background-color: #4338ca;
         }
+        .btn-danger {
+            background-color: #dc2626;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
         .form-input, .form-textarea, .form-range, .form-select {
             background-color: #374151;
             border: 1px solid #4b5563;
@@ -327,7 +338,7 @@
                 listing_manager_no_content_selected: "İçerik seçilmedi",
                 listing_manager_price: "Fiyat (₺)",
                 listing_manager_stock: "Stok Adedi",
-                listing_manager_images: "Ürün Görselleri",
+                listing_manager_images: "Ürün Görselleri (Video desteklenir)",
                 listing_manager_upload_to: "Yüklenecek Mağaza",
                 listing_manager_no_store_connected: "Lütfen önce bir mağaza bağlayın",
                 listing_manager_upload_button: "Yükle",
@@ -383,6 +394,8 @@
                 connections_shopify_desc: "Kendi e-ticaret sitenizi oluşturun ve yönetin.",
                 connections_amazon_desc: "Amazon'un el yapımı ürünler için özel bölümü.",
                 button_connect: "Bağlan",
+                button_connect_another: "Başka Mağaza Bağla",
+                button_disconnect: "Bağlantıyı Kes",
                 button_continue: "Devam Et",
                 button_connected: "Bağlantı Kuruldu",
                 button_soon: "Çok Yakında",
@@ -611,7 +624,7 @@
                             <label for="image-upload-manager" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg w-full flex items-center justify-center gap-2 mt-4 cursor-pointer">
                                 <i class="fas fa-images"></i> <span data-translate-key="photo_editor_upload_btn"></span>
                            </label>
-                           <input type="file" id="image-upload-manager" class="hidden" accept="image/*" multiple>
+                           <input type="file" id="image-upload-manager" class="hidden" accept="image/*,video/*" multiple>
                         </div>
                         <div class="card p-6">
                             <h3 class="font-bold text-white" data-translate-key="listing_manager_upload_to"></h3>
@@ -756,7 +769,29 @@
                  <h2 class="text-3xl font-bold text-white mb-2" data-translate-key="connections_title"></h2>
                 <p class="text-gray-400 mb-8" data-translate-key="connections_subtitle"></p>
                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div id="etsy-card" class="card p-6 flex flex-col items-center text-center">
+                    <!-- Shopify Connections -->
+                    <div class="md:col-span-2 lg:col-span-3 card p-6">
+                        <div class="flex flex-col sm:flex-row items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <i class="fab fa-shopify text-4xl text-green-500"></i>
+                                <div>
+                                    <h3 class="text-xl font-bold text-white">Shopify</h3>
+                                    <p class="text-sm text-gray-400" data-translate-key="connections_shopify_desc"></p>
+                                </div>
+                            </div>
+                            <button id="shopify-connect-btn" class="btn-primary w-full sm:w-auto mt-4 sm:mt-0 flex-shrink-0">
+                               <i class="fas fa-plus mr-2"></i>
+                               <span data-translate-key="button_connect_another"></span>
+                            </button>
+                        </div>
+                        <hr class="border-gray-700 my-4">
+                        <div id="shopify-connections-list" class="space-y-3">
+                            <!-- Bağlı mağazalar buraya eklenecek -->
+                        </div>
+                    </div>
+
+                    <!-- Etsy Connections -->
+                    <div class="card p-6 flex flex-col items-center text-center">
                         <i class="fab fa-etsy text-5xl text-orange-500 mb-4"></i>
                         <h3 class="text-xl font-bold text-white mb-2">Etsy</h3>
                         <p class="text-sm text-gray-400 mb-4 h-10" data-translate-key="connections_etsy_desc"></p>
@@ -765,16 +800,9 @@
                             <span data-translate-key="button_connect"></span>
                         </button>
                     </div>
-                    <div class="card p-6 flex flex-col items-center text-center">
-                        <i class="fab fa-shopify text-5xl text-green-500 mb-4"></i>
-                        <h3 class="text-xl font-bold text-white mb-2">Shopify</h3>
-                        <p class="text-sm text-gray-400 mb-4 h-10" data-translate-key="connections_shopify_desc"></p>
-                        <button id="shopify-connect-btn" class="btn-primary w-full mt-auto flex items-center justify-center gap-2">
-                           <i class="fas fa-link"></i>
-                           <span data-translate-key="button_connect"></span>
-                        </button>
-                    </div>
-                    <div class="card p-6 flex flex-col items-center text-center">
+                    
+                    <!-- Amazon Connections -->
+                    <div class="card p-6 flex flex-col items-center text-center opacity-50">
                         <i class="fab fa-amazon text-5xl text-yellow-500 mb-4"></i>
                         <h3 class="text-xl font-bold text-white mb-2">Amazon Handmade</h3>
                         <p class="text-sm text-gray-400 mb-4 h-10" data-translate-key="connections_amazon_desc"></p>
@@ -949,7 +977,13 @@
                 document.getElementById('calculate-price-btn').addEventListener('click', calculatePrice);
             } else if (page === 'platform-connections') {
                 document.getElementById('shopify-connect-btn').addEventListener('click', showShopifyUrlModal);
-                updateConnectionButtonStates(); 
+                 document.getElementById('shopify-connections-list').addEventListener('click', (e) => {
+                    if (e.target.closest('.disconnect-btn')) {
+                        const shop = e.target.closest('.disconnect-btn').dataset.shop;
+                        disconnectShopify(shop);
+                    }
+                });
+                renderConnections(); 
             } else if (page === 'photo-editor') {
                 initializePhotoEditor();
             }
@@ -989,7 +1023,14 @@
                 const accessToken = params.get('access_token');
                 
                 let connections = getConnections();
-                connections.shopify = { shop: shop, accessToken: accessToken };
+                // Prevent duplicates
+                const existingIndex = connections.shopify.findIndex(s => s.shop === shop);
+                if (existingIndex > -1) {
+                    connections.shopify[existingIndex].accessToken = accessToken; // Update token if exists
+                } else {
+                    connections.shopify.push({ shop, accessToken });
+                }
+                
                 localStorage.setItem('connectedStores', JSON.stringify(connections));
                 
                 // Clean the URL and navigate
@@ -1131,25 +1172,59 @@
         function getConnections() {
             try {
                 const connections = JSON.parse(localStorage.getItem('connectedStores'));
-                return connections || { shopify: null };
+                 // Ensure the structure is correct
+                if (connections && Array.isArray(connections.shopify)) {
+                    return connections;
+                }
+                // If old structure exists, convert it
+                if(connections && connections.shopify && connections.shopify.shop) {
+                    const oldShop = connections.shopify;
+                    const newConnections = { shopify: [oldShop], etsy: [] };
+                    localStorage.setItem('connectedStores', JSON.stringify(newConnections));
+                    return newConnections;
+                }
+                return { shopify: [], etsy: [] }; // Default empty structure
             } catch (e) {
                 console.error("Could not parse connected stores from localStorage", e);
-                return { shopify: null };
+                return { shopify: [], etsy: [] };
+            }
+        }
+        
+        function disconnectShopify(shopToDisconnect) {
+            let connections = getConnections();
+            connections.shopify = connections.shopify.filter(s => s.shop !== shopToDisconnect);
+            localStorage.setItem('connectedStores', JSON.stringify(connections));
+            renderConnections();
+        }
+
+        function renderConnections() {
+            const connections = getConnections();
+            const shopifyList = document.getElementById('shopify-connections-list');
+            if(!shopifyList) return;
+
+            shopifyList.innerHTML = ''; // Clear current list
+
+            if (connections.shopify && connections.shopify.length > 0) {
+                connections.shopify.forEach(conn => {
+                    const shopElement = document.createElement('div');
+                    shopElement.className = 'flex items-center justify-between p-3 bg-gray-800 rounded-lg';
+                    shopElement.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-check-circle text-green-500"></i>
+                            <span class="font-medium text-white">${conn.shop}</span>
+                        </div>
+                        <button data-shop="${conn.shop}" class="disconnect-btn btn-danger text-xs">
+                            <i class="fas fa-times mr-1"></i>
+                            <span data-translate-key="button_disconnect">${translations[currentLang].button_disconnect}</span>
+                        </button>
+                    `;
+                    shopifyList.appendChild(shopElement);
+                });
+            } else {
+                 shopifyList.innerHTML = `<p class="text-sm text-gray-500 text-center p-4">Henüz bir Shopify mağazası bağlanmamış.</p>`;
             }
         }
 
-        function updateConnectionButtonStates() {
-            const connections = getConnections();
-            const shopifyBtn = document.getElementById('shopify-connect-btn');
-            
-            if (connections && connections.shopify && connections.shopify.shop && shopifyBtn) {
-                shopifyBtn.classList.remove('btn-primary');
-                shopifyBtn.classList.add('bg-green-600', 'cursor-default');
-                shopifyBtn.querySelector('span').setAttribute('data-translate-key', 'button_connected');
-                shopifyBtn.querySelector('span').innerText = translations[currentLang].button_connected;
-                shopifyBtn.disabled = true;
-            }
-        }
 
         function updateAiButtonStates() {
             const generateBtn = document.getElementById('generate-btn');
@@ -1616,7 +1691,9 @@
             };
 
             imageUpload.addEventListener('change', (e) => {
-                uploadedFiles.push(...Array.from(e.target.files));
+                // Filter for images only, for now.
+                const imageFiles = Array.from(e.target.files).filter(file => file.type.startsWith('image/'));
+                uploadedFiles.push(...imageFiles);
                 renderPreviews();
                 e.target.value = ''; // Reset input so same file can be selected again
             });
@@ -1650,11 +1727,22 @@
             // Mağaza seçiciyi doldur
             const connections = getConnections();
             storeSelector.innerHTML = ''; // Clear it first
-            if (connections.shopify && connections.shopify.shop) {
-                const option = document.createElement('option');
-                option.value = `shopify:${connections.shopify.shop}`;
-                option.textContent = connections.shopify.shop;
-                storeSelector.appendChild(option);
+            
+            let hasConnections = false;
+            if (connections.shopify && connections.shopify.length > 0) {
+                connections.shopify.forEach(conn => {
+                    const option = document.createElement('option');
+                    option.value = `shopify:${conn.shop}`;
+                    option.textContent = `Shopify: ${conn.shop}`;
+                    storeSelector.appendChild(option);
+                });
+                hasConnections = true;
+            }
+            
+            // Add Etsy stores here in the future
+            // if (connections.etsy && connections.etsy.length > 0) { ... }
+            
+            if(hasConnections) {
                 storeSelector.disabled = false;
             } else {
                 const option = document.createElement('option');
@@ -1666,25 +1754,32 @@
 
             // Yükleme
             uploadBtn.addEventListener('click', async () => {
-                 const platformAndShop = storeSelector.value;
-                 if(!platformAndShop || !connections.shopify) {
+                const platformAndShop = storeSelector.value;
+                if(!platformAndShop || storeSelector.disabled) {
                      return showErrorModal("Lütfen bir mağaza seçin veya bağlayın.");
-                 }
-                 const [platform, shop] = platformAndShop.split(':');
-                 const accessToken = connections.shopify.accessToken;
+                }
                  
-                 if (!accessToken) {
+                const [platform, shop] = platformAndShop.split(':', 2);
+                let accessToken = null;
+
+                if (platform === 'shopify') {
+                    const shopConnection = getConnections().shopify.find(s => s.shop === shop);
+                    if (shopConnection) {
+                        accessToken = shopConnection.accessToken;
+                    }
+                }
+                // Add Etsy logic here in the future
+                 
+                if (!accessToken) {
                     return showErrorModal("Mağaza için yetkilendirme bulunamadı. Lütfen tekrar bağlanın.");
-                 }
+                }
                  
                 const originalHTML = uploadBtn.innerHTML;
                 uploadBtn.disabled = true;
                 uploadBtn.innerHTML = `<div class="spinner !w-5 !h-5 !border-2"></div> <span data-translate-key="listing_manager_uploading">${translations[currentLang].listing_manager_uploading}</span>`;
 
-                // Fotoğrafları Base64'e çevir
                 const imagePromises = uploadedFiles.map(file => toBase64(file));
                 const base64Images = await Promise.all(imagePromises);
-
 
                 const productData = {
                     shop: shop,
@@ -1694,7 +1789,7 @@
                     tags: tagsInput.value,
                     price: document.getElementById('listing-price').value,
                     inventory_quantity: document.getElementById('listing-stock').value,
-                    images: base64Images // YENİ: Base64 imaj dizisini ekle
+                    images: base64Images
                 };
 
                 const apiUrl = getApiBaseUrl();
@@ -1706,7 +1801,11 @@
                 }
 
                 try {
-                    const response = await fetch(`${apiUrl}/shopify/products`, {
+                    // Use platform-specific endpoint
+                    const endpoint = platform === 'shopify' ? '/shopify/products' : ''; // Add other platforms here
+                    if (!endpoint) throw new Error("Platform desteklenmiyor.");
+
+                    const response = await fetch(`${apiUrl}${endpoint}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(productData),
